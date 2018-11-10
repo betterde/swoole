@@ -2,11 +2,12 @@
 
 namespace Betterde\Swoole\Providers;
 
-use Betterde\Swoole\Server\Manager;
 use Swoole\WebSocket\Server;
 use Illuminate\Queue\QueueManager;
+use Betterde\Swoole\Server\Manager;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Database\DatabaseManager;
+use Betterde\Swoole\Contracts\ParserInterface;
 use Betterde\Swoole\Console\StopServiceCommand;
 use Betterde\Swoole\Console\StartServiceCommand;
 use Betterde\Swoole\Console\ReloadServiceCommand;
@@ -135,6 +136,8 @@ class SwooleServiceProvider extends ServiceProvider
         });
 
         $this->app->alias(\Betterde\Swoole\Facades\Server::class, 'swoole.server');
+
+        $this->app->singleton(ParserInterface::class, config('swoole.parser'));
     }
 
     /**

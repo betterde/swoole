@@ -190,3 +190,10 @@ if (! function_exists('swoole_cpu_num')) {
     }
 }
 
+if (! function_exists('swoole_set_process_name')) {
+    function swoole_set_process_name(string $name)
+    {
+
+    }
+}
+

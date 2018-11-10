@@ -95,7 +95,7 @@ return [
         'log_file' => storage_path('logs/swoole.log'),
     ],
 
-    'parser' => '',
+    'parser' => \Betterde\Swoole\Server\Message\Parser::class,
 
     /*
     |--------------------------------------------------------------------------
@@ -103,6 +103,12 @@ return [
     |--------------------------------------------------------------------------
     */
     'namespace' => 'App\Http\Controller\Socket',
+
+    'resolved' => [
+        'view', 'files', 'session', 'session.store', 'routes',
+        'db', 'db.factory', 'cache', 'cache.store', 'config', 'cookie',
+        'encrypter', 'hash', 'router', 'translator', 'url', 'log'
+    ],
 
     /*
     |--------------------------------------------------------------------------
