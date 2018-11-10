@@ -10,7 +10,10 @@
         }
     ],
     "minimum-stability": "dev",
-    "require": {},
+    "require": {
+        "php": "^7.1",
+        "ext-pdo": "*"
+    },
     "autoload": {
         "psr-4": {
             "Betterde\\Swoole\\": "src/"
@@ -28,7 +31,10 @@
         "laravel": {
             "providers": [
                 "Betterde\\Swoole\\Providers\\SwooleServiceProvider"
-            ]
+            ],
+            "aliases": {
+                "Server": "Betterde\\Swoole\\Facades\\Server"
+            }
         }
     }
 }
