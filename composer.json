@@ -1,0 +1,34 @@
+{
+    "name": "betterde/swoole",
+    "description": "Swoole server",
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "George",
+            "email": "george@betterde.com"
+        }
+    ],
+    "minimum-stability": "dev",
+    "require": {},
+    "autoload": {
+        "psr-4": {
+            "Betterde\\Swoole\\": "src/"
+        },
+        "files": [
+            "src/Helpers/swoole.php"
+        ]
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Betterde\\Swoole\\Providers\\SwooleServiceProvider"
+            ]
+        }
+    }
+}
