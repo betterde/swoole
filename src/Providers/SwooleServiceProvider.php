@@ -31,7 +31,7 @@ class SwooleServiceProvider extends ServiceProvider
      * Date: 2018/11/10
      * @author George
      */
-    protected $defer = true;
+    protected $defer = false;
 
     /**
      * 服务实例
