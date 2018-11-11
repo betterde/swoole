@@ -51,6 +51,7 @@ class StartServiceCommand extends Command
     {
         $this->check();
         $this->environment();
+        $this->laravel->make('swoole.manager')->run();
     }
 
     /**
@@ -66,13 +67,13 @@ class StartServiceCommand extends Command
         $environment = [
             ['Host', config('swoole.host')],
             ['Port', config('swoole.port')],
-            ['Worker number', config('swoole.worker_num')],
+            ['Worker number', config('swoole.options.worker_num')],
             ['User', get_current_user()],
-            ['Daemon', config('swoole.daemonize')],
+            ['Daemon', config('swoole.options.daemonize')],
             ['PHP Version', phpversion()],
             ['Swoole Version', phpversion('swoole')],
-            ['PID File Path', config('swoole.pid_file')],
-            ['Log File Path', config('swoole.log_file')]
+            ['PID File Path', config('swoole.options.pid_file')],
+            ['Log File Path', config('swoole.options.log_file')]
         ];
         $this->table($headers, $environment);
     }
