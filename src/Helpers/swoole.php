@@ -135,7 +135,6 @@ namespace Swoole\Http {
 }
 
 namespace Swoole\WebSocket {
-
     class Server extends \Swoole\Http\Server
     {
 

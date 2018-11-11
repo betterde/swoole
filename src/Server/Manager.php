@@ -2,10 +2,11 @@
 
 namespace Betterde\Swoole\Server;
 
+use App\Socket\Parser;
 use Illuminate\Foundation\Application;
-use Betterde\Swoole\Server\Message\Parser;
 use Illuminate\Contracts\Container\Container;
 use Betterde\Swoole\Contracts\ParserInterface;
+use Illuminate\Support\Facades\Facade;
 
 /**
  * 服务管理器
@@ -48,12 +49,14 @@ class Manager
     /**
      * Manager constructor.
      * @param Container $app
-     * @param ServiceEvent $events
      */
-    public function __construct(Container $app, ServiceEvent $events)
+    public function __construct(Container $app)
     {
+        $events = new ServiceEvent();
         $this->events = $events->getEvents();
         $this->app = $app;
+        $parser = new Parser();
+        $this->initialize($parser);
     }
 
     /**
@@ -66,6 +69,7 @@ class Manager
     protected function initialize(ParserInterface $parser)
     {
         $this->setParser($parser);
+        $this->registerListeners();
     }
 
     /**
@@ -145,7 +149,7 @@ class Manager
         $this->setProcessName('master process');
         $this->createPidFile();
 
-        $this->container['events']->fire('swoole.start', func_get_args());
+        $this->app['events']->fire('swoole.start', func_get_args());
     }
 
     /**
@@ -156,7 +160,7 @@ class Manager
     public function onManagerStart()
     {
         $this->setProcessName('manager process');
-        $this->container['events']->fire('swoole.managerStart', func_get_args());
+        $this->app['events']->fire('swoole.managerStart', func_get_args());
     }
 
     /**
@@ -167,7 +171,7 @@ class Manager
         $this->clearCache();
         $this->setProcessName('worker process');
 
-        $this->container['events']->fire('swoole.workerStart', func_get_args());
+        $this->app['events']->fire('swoole.workerStart', func_get_args());
 
         // don't init laravel app in task workers
         if ($server->taskworker) {
@@ -179,15 +183,6 @@ class Manager
 
         // prepare laravel app
         $this->getApplication();
-
-        // bind after setting laravel app
-        $this->bindToLaravelApp();
-
-        // prepare websocket handler and routes
-        if ($this->isWebsocket) {
-            $this->prepareWebsocketHandler();
-            $this->loadWebsocketRoutes();
-        }
     }
 
     /**
@@ -198,41 +193,41 @@ class Manager
      */
     public function onRequest($swooleRequest, $swooleResponse)
     {
-        $this->app['events']->fire('swoole.request');
-
-        $this->resetOnRequest();
-        $handleStatic = $this->container['config']->get('swoole_http.handle_static_files', true);
-        $publicPath = $this->container['config']->get('swoole_http.server.public_path', base_path('public'));
-
-        try {
-            // handle static file request first
-            if ($handleStatic && Request::handleStatic($swooleRequest, $swooleResponse, $publicPath)) {
-                return;
-            }
-            // transform swoole request to illuminate request
-            $illuminateRequest = Request::make($swooleRequest)->toIlluminate();
-
-            // set current request to sandbox
-            $this->app['swoole.sandbox']->setRequest($illuminateRequest);
-            // enable sandbox
-            $this->app['swoole.sandbox']->enable();
-
-            // handle request via laravel/lumen's dispatcher
-            $illuminateResponse = $this->app['swoole.sandbox']->run($illuminateRequest);
-            $response = Response::make($illuminateResponse, $swooleResponse);
-            $response->send();
-        } catch (Throwable $e) {
-            try {
-                $exceptionResponse = $this->app[ExceptionHandler::class]->render($illuminateRequest, $e);
-                $response = Response::make($exceptionResponse, $swooleResponse);
-                $response->send();
-            } catch (Throwable $e) {
-                $this->logServerError($e);
-            }
-        } finally {
-            // disable and recycle sandbox resource
-            $this->app['swoole.sandbox']->disable();
-        }
+//        $this->app['events']->fire('swoole.request');
+//
+//        $this->resetOnRequest();
+//        $handleStatic = $this->app['config']->get('swoole_http.handle_static_files', true);
+//        $publicPath = $this->app['config']->get('swoole_http.server.public_path', base_path('public'));
+//
+//        try {
+//            // handle static file request first
+//            if ($handleStatic && Request::handleStatic($swooleRequest, $swooleResponse, $publicPath)) {
+//                return;
+//            }
+//            // transform swoole request to illuminate request
+//            $illuminateRequest = Request::make($swooleRequest)->toIlluminate();
+//
+//            // set current request to sandbox
+//            $this->app['swoole.sandbox']->setRequest($illuminateRequest);
+//            // enable sandbox
+//            $this->app['swoole.sandbox']->enable();
+//
+//            // handle request via laravel/lumen's dispatcher
+//            $illuminateResponse = $this->app['swoole.sandbox']->run($illuminateRequest);
+//            $response = Response::make($illuminateResponse, $swooleResponse);
+//            $response->send();
+//        } catch (Throwable $e) {
+//            try {
+//                $exceptionResponse = $this->app[ExceptionHandler::class]->render($illuminateRequest, $e);
+//                $response = Response::make($exceptionResponse, $swooleResponse);
+//                $response->send();
+//            } catch (Throwable $e) {
+//                $this->logServerError($e);
+//            }
+//        } finally {
+//            // disable and recycle sandbox resource
+//            $this->app['swoole.sandbox']->disable();
+//        }
     }
 
     /**
@@ -241,37 +236,9 @@ class Manager
     protected function resetOnRequest()
     {
         // Reset websocket data
-        if ($this->isWebsocket) {
-            $this->app['swoole.websocket']->reset(true);
-        }
-    }
-
-    /**
-     * Set onTask listener.
-     */
-    public function onTask($server, $taskId, $srcWorkerId, $data)
-    {
-        $this->container['events']->fire('swoole.task', func_get_args());
-
-        try {
-            // push websocket message
-            if (is_array($data)) {
-                if ($this->isWebsocket
-                    && array_key_exists('action', $data)
-                    && $data['action'] === Websocket::PUSH_ACTION) {
-                    $this->pushMessage($server, $data['data'] ?? []);
-                }
-                // push async task to queue
-            } elseif (is_string($data)) {
-                $decoded = json_decode($data, true);
-
-                if (JSON_ERROR_NONE === json_last_error() && isset($decoded['job'])) {
-                    (new SwooleTaskJob($this->container, $server, $data, $taskId, $srcWorkerId))->fire();
-                }
-            }
-        } catch (Throwable $e) {
-            $this->logServerError($e);
-        }
+//        if ($this->isWebsocket) {
+//            $this->app['swoole.websocket']->reset(true);
+//        }
     }
 
     /**
@@ -292,38 +259,13 @@ class Manager
     }
 
     /**
-     * Set bindings to Laravel app.
-     */
-    protected function bindToLaravelApp()
-    {
-        $this->bindSandbox();
-        $this->bindSwooleTable();
-
-        if ($this->isWebsocket) {
-            $this->bindRoom();
-            $this->bindWebsocket();
-        }
-    }
-
-    /**
-     * Bind sandbox to Laravel app container.
-     */
-    protected function bindSandbox()
-    {
-        $this->app->singleton(Sandbox::class, function ($app) {
-            return new Sandbox($app);
-        });
-        $this->app->alias(Sandbox::class, 'swoole.sandbox');
-    }
-
-    /**
      * Gets pid file path.
      *
      * @return string
      */
     protected function getPidFile()
     {
-        return $this->app['config']->get('swoole_http.server.options.pid_file');
+        return $this->app['config']->get('swoole.options.pid_file');
     }
 
     /**
