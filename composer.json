@@ -17,10 +17,7 @@
     "autoload": {
         "psr-4": {
             "Betterde\\Swoole\\": "src/"
-        },
-        "files": [
-            "src/Helpers/swoole.php"
-        ]
+        }
     },
     "autoload-dev": {
         "psr-4": {
