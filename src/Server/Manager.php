@@ -3,10 +3,10 @@
 namespace Betterde\Swoole\Server;
 
 use App\Socket\Parser;
+use Illuminate\Support\Facades\Facade;
 use Illuminate\Foundation\Application;
 use Illuminate\Contracts\Container\Container;
 use Betterde\Swoole\Contracts\ParserInterface;
-use Illuminate\Support\Facades\Facade;
 
 /**
  * 服务管理器
@@ -164,10 +164,13 @@ class Manager
     }
 
     /**
-     * "onWorkerStart" listener.
+     * Date: 2018/11/11
+     * @author George
+     * @param $server
      */
     public function onWorkerStart($server)
     {
+        dd($server);
         $this->clearCache();
         $this->setProcessName('worker process');
 
@@ -181,7 +184,6 @@ class Manager
         // clear events instance in case of repeated listeners in worker process
         Facade::clearResolvedInstance('events');
 
-        // prepare laravel app
         $this->getApplication();
     }
 

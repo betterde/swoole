@@ -3,17 +3,14 @@
 namespace Betterde\Swoole\Providers;
 
 use Swoole\WebSocket\Server;
-use Illuminate\Queue\QueueManager;
 use Betterde\Swoole\Server\Manager;
 use Illuminate\Support\ServiceProvider;
-use Illuminate\Database\DatabaseManager;
 use Betterde\Swoole\Contracts\ParserInterface;
 use Betterde\Swoole\Console\StopServiceCommand;
 use Betterde\Swoole\Console\StartServiceCommand;
 use Betterde\Swoole\Console\ReloadServiceCommand;
 use Betterde\Swoole\Console\RestartServiceCommand;
 use Betterde\Swoole\Console\DisplayEnvironmentsCommand;
-use Betterde\Swoole\Coroutine\Connectors\MySqlConnector;
 
 /**
  * Swoole 服务提供者
@@ -75,48 +72,6 @@ class SwooleServiceProvider extends ServiceProvider
     {
         $this->registerServer();
         $this->registerManager();
-//        $this->registerDatabaseDriver();
-//        $this->registerSwooleQueueDriver();
-    }
-
-    /**
-     * 注册异步队列驱动
-     *
-     * Date: 2018/11/10
-     * @author George
-     */
-    protected function registerSwooleQueueDriver()
-    {
-        $this->app->afterResolving('queue', function (QueueManager $manager) {
-            $manager->addConnector('swoole', function () {
-                return new SwooleTaskConnector($this->app->make(Server::class));
-            });
-        });
-    }
-
-    /**
-     * 注册协程数据库驱动
-     *
-     * Date: 2018/11/10
-     * @author George
-     */
-    protected function registerDatabaseDriver()
-    {
-        $this->app->resolving('db', function (DatabaseManager $db) {
-            $db->extend('mysql-coroutine', function ($config, $name) {
-                $config['name'] = $name;
-                $connection = function () use ($config) {
-                    return (new MySqlConnector())->connect($config);
-                };
-
-                return new MySqlConnection(
-                    $connection,
-                    $config['database'],
-                    $config['prefix'],
-                    $config
-                );
-            });
-        });
     }
 
     /**
@@ -127,6 +82,7 @@ class SwooleServiceProvider extends ServiceProvider
      */
     protected function registerServer()
     {
+        // 注册到容器
         $this->app->singleton(\Betterde\Swoole\Facades\Server::class, function () {
             if (is_null(static::$server)) {
                 $this->createSwooleServer();
@@ -141,6 +97,8 @@ class SwooleServiceProvider extends ServiceProvider
     }
 
     /**
+     * 注册服务管理器
+     *
      * Date: 2018/11/10
      * @author George
      */
