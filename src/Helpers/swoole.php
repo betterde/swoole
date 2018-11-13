@@ -143,6 +143,7 @@ namespace Swoole\Http {
     /**
      * HTTP Request
      *
+     * @property int $fd
      * Date: 2018/11/13
      * @author George
      * @package Swoole\Http
@@ -190,7 +191,7 @@ namespace Swoole\Http {
         public $files;
 
         /**
-         * @var $fd
+         * @var int $fd
          * Date: 2018/11/13
          * @author George
          */
@@ -330,6 +331,47 @@ namespace Swoole\WebSocket {
         {
 
         }
+    }
+
+    /**
+     * Web Socket Frame
+     *
+     * Date: 2018/11/13
+     * @author George
+     * @property int $fd
+     * @property bool $finish
+     * @property int $opcode
+     * @property string $data
+     * @package Swoole\WebSocket
+     */
+    class Frame {
+        /**
+         * @var int $fd
+         * Date: 2018/11/13
+         * @author George
+         */
+        public $fd;
+
+        /**
+         * @var bool $finish
+         * Date: 2018/11/13
+         * @author George
+         */
+        public $finish;
+
+        /**
+         * @var int $opcode
+         * Date: 2018/11/13
+         * @author George
+         */
+        public $opcode;
+
+        /**
+         * @var string $data
+         * Date: 2018/11/13
+         * @author George
+         */
+        public $data;
     }
 
     class swoole_websocket_server extends Server

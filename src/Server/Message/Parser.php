@@ -2,8 +2,11 @@
 
 namespace Betterde\Swoole\Server\Message;
 
+use Betterde\Swoole\Exceptions\MessageException;
+use Swoole\WebSocket\Frame;
 use Illuminate\Support\Facades\App;
 use Betterde\Swoole\Contracts\ParserInterface;
+use Swoole\WebSocket\Server;
 
 /**
  * 消息报文解析
@@ -51,13 +54,58 @@ abstract class Parser implements ParserInterface
         return $skip;
     }
 
+    /**
+     * 对消息进行编码
+     *
+     * Date: 2018/11/13
+     * @author George
+     * @param string $event
+     * @param $data
+     * @return mixed|void
+     */
     public function encode(string $event, $data)
     {
-        // TODO: Implement encode() method.
+        $payload = json_encode($data, JSON_UNESCAPED_UNICODE);
     }
 
-    public function decode($frame)
+    /**
+     * 对消息进行解码
+     *
+     * Date: 2018/11/13
+     * @author George
+     * @param Frame $frame
+     * @return Payload|mixed
+     * @throws MessageException
+     */
+    public function decode(Frame $frame)
     {
-        // TODO: Implement decode() method.
+        if ($frame->finish) {
+            $data = json_decode($frame->data, JSON_UNESCAPED_UNICODE);
+            return new Payload(
+                array_get($data, 'controller', 'default'),
+                array_get($data, 'action', 'default'),
+                array_get($data, 'body', 'default'),
+                $frame->fd,
+                $frame->opcode
+            );
+        }
+
+        throw new MessageException('Frame is not finish');
+    }
+
+    /**
+     * 分发消息到指定逻辑
+     *
+     * Date: 2018/11/13
+     * @author George
+     * @param Server $server
+     * @param Payload $payload
+     */
+    public function dispatch(Server $server, Payload $payload)
+    {
+        $controller = $payload->getController();
+        $action = $payload->getAction();
+        $instance = new $controller;
+        $instance->{$action}($server, $payload);
     }
 }

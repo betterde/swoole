@@ -122,7 +122,7 @@ trait Adapter
     }
 
     /**
-     * 引导
+     * 引导 HTTP 内核
      *
      * Date: 2018/11/10
      * @author George
@@ -140,23 +140,6 @@ trait Adapter
     }
 
     /**
-     * 获取应用实例
-     *
-     * Date: 2018/11/10
-     * @author George
-     * @return Container|\Illuminate\Contracts\Foundation\Application|Application
-     */
-    public function getApplication()
-    {
-        if (! $this->app instanceof Container) {
-            $this->app = $this->loadApplication();
-            $this->bootstrap();
-        }
-
-        return $this->app;
-    }
-
-    /**
      * 解析要用到的实例
      *
      * Date: 2018/11/10
@@ -167,21 +150,9 @@ trait Adapter
         $resolves = config('swoole.resolved');
 
         foreach ($resolves as $abstract) {
-            if ($this->getApplication()->offsetExists($abstract)) {
-                $this->getApplication()->make($abstract);
+            if ($this->app->offsetExists($abstract)) {
+                $this->app->make($abstract);
             }
         }
-    }
-
-    /**
-     * 获取应用实例
-     *
-     * Date: 2018/11/10
-     * @author George
-     * @return \Illuminate\Contracts\Foundation\Application
-     */
-    protected function loadApplication()
-    {
-        return require base_path('bootstrap/app.php');
     }
 }

@@ -2,6 +2,8 @@
 
 namespace Betterde\Swoole\Contracts;
 
+use Swoole\WebSocket\Frame;
+
 /**
  * 消息解析器
  *
@@ -28,8 +30,8 @@ interface ParserInterface
      *
      * Date: 2018/11/10
      * @author George
-     * @param $frame
+     * @param Frame $frame
      * @return mixed
      */
-    public function decode($frame);
+    public function decode(Frame $frame);
 }

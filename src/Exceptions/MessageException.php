@@ -1,13 +1,15 @@
 <?php
-/**
- * Date: 2018/11/13
- * @author George
- */
 
 namespace Betterde\Swoole\Exceptions;
 
+use Exception;
 
-class MessageException
+/**
+ * Date: 2018/11/13
+ * @author George
+ * @package Betterde\Swoole\Exceptions
+ */
+class MessageException extends Exception
 {
 
 }

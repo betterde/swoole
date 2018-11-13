@@ -10,6 +10,7 @@ use Swoole\Http\Request as SwooleRequest;
 use Swoole\Http\Response as SwooleResponse;
 use Betterde\Swoole\Contracts\ParserInterface;
 use Illuminate\Contracts\Debug\ExceptionHandler;
+use Swoole\WebSocket\Frame;
 use Swoole\WebSocket\Server;
 
 /**
@@ -188,14 +189,18 @@ class Manager
         Facade::clearResolvedInstance('events');
 
         $kernel = $this->app->make(Kernel::class);
-//        $this->getApplication();
         $reflection = new \ReflectionObject($kernel);
         $bootstrappersMethod = $reflection->getMethod('bootstrappers');
         $bootstrappersMethod->setAccessible(true);
         $bootstrappers = $bootstrappersMethod->invoke($kernel);
         array_splice($bootstrappers, -2, 0, ['Illuminate\Foundation\Bootstrap\SetRequestForConsole']);
         $this->app->bootstrapWith($bootstrappers);
-//        $this->resolveInstances();
+        $this->resolveInstances();
+    }
+
+    public function onMessage(Server $server, Frame $frame)
+    {
+        var_dump($frame);
     }
 
     /**
@@ -206,6 +211,7 @@ class Manager
      */
     public function onRequest(SwooleRequest $swooleRequest, SwooleResponse $swooleResponse)
     {
+        $this->app->make('swoole.server')->push(1, 'oK', 1, true);
         $request = $this->transformRequest($swooleRequest);
         $kernel = $this->app->make(Kernel::class);
 
