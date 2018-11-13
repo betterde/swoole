@@ -3,10 +3,14 @@
 namespace Betterde\Swoole\Server;
 
 use App\Socket\Parser;
+use Illuminate\Contracts\Http\Kernel;
 use Illuminate\Support\Facades\Facade;
 use Illuminate\Foundation\Application;
-use Illuminate\Contracts\Container\Container;
+use Swoole\Http\Request as SwooleRequest;
+use Swoole\Http\Response as SwooleResponse;
 use Betterde\Swoole\Contracts\ParserInterface;
+use Illuminate\Contracts\Debug\ExceptionHandler;
+use Swoole\WebSocket\Server;
 
 /**
  * 服务管理器
@@ -20,7 +24,7 @@ class Manager
     use Adapter;
     
     /**
-     * Laravel 实例
+     * Laravel Application 实例
      *
      * @var Application $app
      * Date: 2018/11/10
@@ -48,9 +52,9 @@ class Manager
 
     /**
      * Manager constructor.
-     * @param Container $app
+     * @param Application $app
      */
-    public function __construct(Container $app)
+    public function __construct(Application $app)
     {
         $events = new ServiceEvent();
         $this->events = $events->getEvents();
@@ -170,7 +174,6 @@ class Manager
      */
     public function onWorkerStart($server)
     {
-        dd($server);
         $this->clearCache();
         $this->setProcessName('worker process');
 
@@ -184,72 +187,51 @@ class Manager
         // clear events instance in case of repeated listeners in worker process
         Facade::clearResolvedInstance('events');
 
-        $this->getApplication();
+        $kernel = $this->app->make(Kernel::class);
+//        $this->getApplication();
+        $reflection = new \ReflectionObject($kernel);
+        $bootstrappersMethod = $reflection->getMethod('bootstrappers');
+        $bootstrappersMethod->setAccessible(true);
+        $bootstrappers = $bootstrappersMethod->invoke($kernel);
+        array_splice($bootstrappers, -2, 0, ['Illuminate\Foundation\Bootstrap\SetRequestForConsole']);
+        $this->app->bootstrapWith($bootstrappers);
+//        $this->resolveInstances();
     }
 
     /**
-     * "onRequest" listener.
-     *
-     * @param \Swoole\Http\Request $swooleRequest
-     * @param \Swoole\Http\Response $swooleResponse
+     * Date: 2018/11/13
+     * @author George
+     * @param SwooleRequest $swooleRequest
+     * @param SwooleResponse $swooleResponse
      */
-    public function onRequest($swooleRequest, $swooleResponse)
+    public function onRequest(SwooleRequest $swooleRequest, SwooleResponse $swooleResponse)
     {
-//        $this->app['events']->fire('swoole.request');
-//
-//        $this->resetOnRequest();
-//        $handleStatic = $this->app['config']->get('swoole_http.handle_static_files', true);
-//        $publicPath = $this->app['config']->get('swoole_http.server.public_path', base_path('public'));
-//
-//        try {
-//            // handle static file request first
-//            if ($handleStatic && Request::handleStatic($swooleRequest, $swooleResponse, $publicPath)) {
-//                return;
-//            }
-//            // transform swoole request to illuminate request
-//            $illuminateRequest = Request::make($swooleRequest)->toIlluminate();
-//
-//            // set current request to sandbox
-//            $this->app['swoole.sandbox']->setRequest($illuminateRequest);
-//            // enable sandbox
-//            $this->app['swoole.sandbox']->enable();
-//
-//            // handle request via laravel/lumen's dispatcher
-//            $illuminateResponse = $this->app['swoole.sandbox']->run($illuminateRequest);
-//            $response = Response::make($illuminateResponse, $swooleResponse);
-//            $response->send();
-//        } catch (Throwable $e) {
-//            try {
-//                $exceptionResponse = $this->app[ExceptionHandler::class]->render($illuminateRequest, $e);
-//                $response = Response::make($exceptionResponse, $swooleResponse);
-//                $response->send();
-//            } catch (Throwable $e) {
-//                $this->logServerError($e);
-//            }
-//        } finally {
-//            // disable and recycle sandbox resource
-//            $this->app['swoole.sandbox']->disable();
-//        }
-    }
+        $request = $this->transformRequest($swooleRequest);
+        $kernel = $this->app->make(Kernel::class);
 
-    /**
-     * Reset on every request.
-     */
-    protected function resetOnRequest()
-    {
-        // Reset websocket data
-//        if ($this->isWebsocket) {
-//            $this->app['swoole.websocket']->reset(true);
-//        }
-    }
+        /**
+         * @var \Illuminate\Http\Response $response
+         */
+        $response = $kernel->handle($request);
+        $kernel->terminate($request, $response);
 
-    /**
-     * Set onFinish listener.
-     */
-    public function onFinish($server, $taskId, $data)
-    {
-        // task worker callback
-        return;
+        /* RFC2616 - 14.18 says all Responses need to have a Date */
+        if (!$response->headers->has('Date')) {
+            $response->setDate(\DateTime::createFromFormat('U', time()));
+        }
+
+        $headers = $response->headers->allPreserveCase();
+        if (isset($headers['Set-Cookie'])) {
+            unset($headers['Set-Cookie']);
+        }
+
+        foreach ($headers as $name => $values) {
+            foreach ($values as $value) {
+                $swooleResponse->header($name, $value);
+            }
+        }
+
+        $this->transformResponse($response, $swooleResponse);
     }
 
     /**

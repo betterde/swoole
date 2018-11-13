@@ -48,8 +48,6 @@ class ReloadServiceCommand extends Command
      */
     public function handle()
     {
-        dd($this->arguments());
-
         $signal = $this->arguments();
 
         if (array_get($signal, 'start', null)) {

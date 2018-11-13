@@ -128,9 +128,183 @@ namespace Swoole {
 }
 
 namespace Swoole\Http {
+    /**
+     * HTTP Server
+     *
+     * Date: 2018/11/13
+     * @author George
+     * @package Swoole\Http
+     */
     class Server
     {
 
+    }
+
+    /**
+     * HTTP Request
+     *
+     * Date: 2018/11/13
+     * @author George
+     * @package Swoole\Http
+     */
+    class Request {
+        /**
+         * @var array $get
+         * Date: 2018/11/13
+         * @author George
+         */
+        public $get;
+
+        /**
+         * @var array $post
+         * Date: 2018/11/13
+         * @author George
+         */
+        public $post;
+
+        /**
+         * @var array $header
+         * Date: 2018/11/13
+         * @author George
+         */
+        public $header;
+        /**
+         * @var array $server
+         * Date: 2018/11/13
+         * @author George
+         */
+        public $server;
+
+        /**
+         * @var array $cookie
+         * Date: 2018/11/13
+         * @author George
+         */
+        public $cookie;
+
+        /**
+         * @var $files
+         * Date: 2018/11/13
+         * @author George
+         */
+        public $files;
+
+        /**
+         * @var $fd
+         * Date: 2018/11/13
+         * @author George
+         */
+        public $fd;
+
+        /**
+         * Date: 2018/11/13
+         * @author George
+         * @return string
+         */
+        public function rawContent()
+        {
+            return '';
+        }
+    }
+
+    /**
+     * HTTP Response
+     *
+     * Date: 2018/11/13
+     * @author George
+     * @package Swoole\Http
+     */
+    class Response {
+        /**
+         * 向客户端发送HTTP响应
+         *
+         * Date: 2018/11/13
+         * @author George
+         * @param string $content
+         */
+        public function end(string $content = '')
+        {
+
+        }
+
+        /**
+         * 启用HTTP-Chunk分段向客户端发送数据
+         *
+         * Date: 2018/11/13
+         * @author George
+         * @param string $content
+         */
+        public function write(string $content)
+        {
+
+        }
+
+        /**
+         * 设置HTTP头信息
+         *
+         * Date: 2018/11/13
+         * @author George
+         * @param string $key
+         * @param string $value
+         */
+        public function header(string $key, string $value)
+        {
+
+        }
+
+        /**
+         * 设置 Cookie
+         *
+         * Date: 2018/11/13
+         * @author George
+         * @param string $key
+         * @param string $value
+         * @param int $expire
+         * @param string $path
+         * @param string $domain
+         * @param bool $secure
+         * @param bool $httponly
+         */
+        public function cookie(string $key, string $value, int $expire = 0, string $path = '/', string $domain = '', bool $secure = false, bool $httponly = false)
+        {
+
+        }
+
+        /**
+         * 设置状态码
+         *
+         * Date: 2018/11/13
+         * @author George
+         * @param int $code
+         */
+        public function status(int $code = 200)
+        {
+
+        }
+
+        /**
+         * 设置压缩格式
+         *
+         * Date: 2018/11/13
+         * @author George
+         * @param int $level
+         */
+        public function gzip(int $level = 1)
+        {
+
+        }
+
+        /**
+         * 向客户端发送文件
+         *
+         * Date: 2018/11/13
+         * @author George
+         * @param string $filename
+         */
+        public function sendfile(string $filename)
+        {
+
+        }
     }
 }
 

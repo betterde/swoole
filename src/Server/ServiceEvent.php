@@ -46,6 +46,4 @@ class ServiceEvent implements EventInterface
     {
         $this->events = $events;
     }
-
-
 }
