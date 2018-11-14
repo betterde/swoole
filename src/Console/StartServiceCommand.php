@@ -69,7 +69,7 @@ class StartServiceCommand extends Command
             ['Port', config('swoole.port')],
             ['Worker number', config('swoole.options.worker_num')],
             ['User', get_current_user()],
-            ['Daemon', config('swoole.options.daemonize')],
+            ['Daemon', config('swoole.options.daemonize') ? 'true' : 'false'],
             ['PHP Version', phpversion()],
             ['Swoole Version', phpversion('swoole')],
             ['PID File Path', config('swoole.options.pid_file')],

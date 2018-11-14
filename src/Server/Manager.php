@@ -2,17 +2,18 @@
 
 namespace Betterde\Swoole\Server;
 
+use ReflectionObject;
 use App\Socket\Parser;
-use Betterde\Swoole\Contracts\WebSocketKernel;
+use Swoole\WebSocket\Frame;
+use Swoole\WebSocket\Server;
 use Illuminate\Contracts\Http\Kernel;
 use Illuminate\Support\Facades\Facade;
 use Illuminate\Foundation\Application;
 use Swoole\Http\Request as SwooleRequest;
 use Swoole\Http\Response as SwooleResponse;
+use Betterde\Swoole\Contracts\WebSocketKernel;
 use Betterde\Swoole\Contracts\ParserInterface;
 use Illuminate\Contracts\Debug\ExceptionHandler;
-use Swoole\WebSocket\Frame;
-use Swoole\WebSocket\Server;
 
 /**
  * 服务管理器
@@ -174,23 +175,18 @@ class Manager
      * @author George
      * @param $server
      */
-    public function onWorkerStart($server)
+    public function onWorkerStart(Server $server)
     {
         $this->clearCache();
         $this->setProcessName('worker process');
 
         $this->app['events']->fire('swoole.workerStart', func_get_args());
 
-        // don't init laravel app in task workers
-        if ($server->taskworker) {
-            return;
-        }
-
         // clear events instance in case of repeated listeners in worker process
         Facade::clearResolvedInstance('events');
 
         $kernel = $this->app->make(Kernel::class);
-        $reflection = new \ReflectionObject($kernel);
+        $reflection = new ReflectionObject($kernel);
         $bootstrappersMethod = $reflection->getMethod('bootstrappers');
         $bootstrappersMethod->setAccessible(true);
         $bootstrappers = $bootstrappersMethod->invoke($kernel);
