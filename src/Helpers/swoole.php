@@ -327,6 +327,20 @@ namespace Swoole\WebSocket {
 
         }
 
+        /**
+         * 向用户推送消息
+         *
+         * Date: 2018/11/14
+         * @author George
+         * @param int $fd
+         * @param string $data
+         * @param bool bool $binary_data
+         * @param bool $finish
+         */
+        function push($fd, $data, $binary_data = false, $finish = true)
+        {
+        }
+
         public function set(array $setting)
         {
 

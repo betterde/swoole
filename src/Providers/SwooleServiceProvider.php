@@ -71,7 +71,21 @@ class SwooleServiceProvider extends ServiceProvider
     public function register()
     {
         $this->registerServer();
+        $this->registerKernel();
         $this->registerManager();
+    }
+
+    /**
+     * 注册消息服务内核
+     *
+     * Date: 2018/11/14
+     * @author George
+     */
+    public function registerKernel()
+    {
+        $this->app->singleton(config('swoole.kernel.abstract'), config('swoole.kernel.concrete'));
+        $this->app->singleton(config('swoole.events.abstract'), config('swoole.events.concrete'));
+        $this->app->singleton(config('swoole.dispatcher.abstract'), config('swoole.dispatcher.concrete'));
     }
 
     /**

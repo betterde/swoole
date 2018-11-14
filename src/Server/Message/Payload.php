@@ -74,6 +74,9 @@ class Payload implements PayloadInterface
      */
     public function getController(): string
     {
+        if (strpos($this->controller, '\\') !== 0) {
+            return '\\' . $this->controller;
+        }
         return $this->controller;
     }
 

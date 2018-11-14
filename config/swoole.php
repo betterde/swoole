@@ -102,7 +102,10 @@ return [
     | 定义逻辑控制器的命名空间
     |--------------------------------------------------------------------------
     */
-    'namespace' => 'App\Http\Controller\Socket',
+    'im' => [
+        'namespace' => 'App\Socket\Controllers',
+        'default' => 'DefaultHandler@handler',
+    ],
 
     'resolved' => [
         'view', 'files', 'session', 'session.store', 'routes',
@@ -124,5 +127,18 @@ return [
     | 是否允用户许多端登陆
     |--------------------------------------------------------------------------
     */
-    'multiterminal' => env('WEB_SOCKET_MULTITERMINAL', false)
+    'multiterminal' => env('WEB_SOCKET_MULTITERMINAL', false),
+    'kernel' => [
+        'abstract' => \Betterde\Swoole\Contracts\WebSocketKernel::class,
+        'concrete' => \App\Socket\Kernel::class
+    ],
+    'events' => [
+        'abstract' => \Betterde\Swoole\Contracts\EventInterface::class,
+        'concrete' => \Betterde\Swoole\Server\ServiceEvent::class,
+    ],
+    'dispatcher' => [
+        'abstract' => \Betterde\Swoole\Contracts\Dispatcher::class,
+        'concrete' => \App\Socket\Dispatcher::class,
+    ],
+    'custom_controller' => false
 ];

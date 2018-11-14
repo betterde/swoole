@@ -3,6 +3,7 @@
 namespace Betterde\Swoole\Server;
 
 use App\Socket\Parser;
+use Betterde\Swoole\Contracts\WebSocketKernel;
 use Illuminate\Contracts\Http\Kernel;
 use Illuminate\Support\Facades\Facade;
 use Illuminate\Foundation\Application;
@@ -198,9 +199,19 @@ class Manager
         $this->resolveInstances();
     }
 
+    /**
+     * 收到消息后分发
+     *
+     * Date: 2018/11/14
+     * @author George
+     * @param Server $server
+     * @param Frame $frame
+     */
     public function onMessage(Server $server, Frame $frame)
     {
-        var_dump($frame);
+        $this->app->singleton(config('swoole.kernel.abstract'), config('swoole.kernel.concrete'));
+        $kernel = $this->app->make(WebSocketKernel::class);
+        $kernel->handle($server, $frame);
     }
 
     /**
@@ -211,7 +222,6 @@ class Manager
      */
     public function onRequest(SwooleRequest $swooleRequest, SwooleResponse $swooleResponse)
     {
-        $this->app->make('swoole.server')->push(1, 'oK', 1, true);
         $request = $this->transformRequest($swooleRequest);
         $kernel = $this->app->make(Kernel::class);
 

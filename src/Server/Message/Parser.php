@@ -2,6 +2,7 @@
 
 namespace Betterde\Swoole\Server\Message;
 
+use App\Http\Controllers\TestController;
 use Betterde\Swoole\Exceptions\MessageException;
 use Swoole\WebSocket\Frame;
 use Illuminate\Support\Facades\App;
@@ -82,7 +83,7 @@ abstract class Parser implements ParserInterface
         if ($frame->finish) {
             $data = json_decode($frame->data, JSON_UNESCAPED_UNICODE);
             return new Payload(
-                array_get($data, 'controller', 'default'),
+                array_get($data, 'controller', TestController::class),
                 array_get($data, 'action', 'default'),
                 array_get($data, 'body', 'default'),
                 $frame->fd,
@@ -103,9 +104,9 @@ abstract class Parser implements ParserInterface
      */
     public function dispatch(Server $server, Payload $payload)
     {
-        $controller = $payload->getController();
+        $controller = 'App\\Socket\\' . $payload->getController();
         $action = $payload->getAction();
-        $instance = new $controller;
+        $instance = new $controller();
         $instance->{$action}($server, $payload);
     }
 }
