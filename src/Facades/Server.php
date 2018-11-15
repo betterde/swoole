@@ -9,6 +9,8 @@ use Illuminate\Support\Facades\Facade;
  *
  * Date: 2018/11/10
  * @author George
+ * @method static push(int $fd, string $data, bool $binary_data = false, bool $finish = true)
+ * @method static close($fd, $reset = false)
  * @package Betterde\Swoole\Facades
  */
 class Server extends Facade
