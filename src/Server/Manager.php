@@ -2,17 +2,9 @@
 
 namespace Betterde\Swoole\Server;
 
-use ReflectionObject;
 use App\Socket\Parser;
-use Swoole\WebSocket\Frame;
-use Swoole\WebSocket\Server;
-use Illuminate\Contracts\Http\Kernel;
-use Illuminate\Support\Facades\Facade;
 use Illuminate\Foundation\Application;
-use Swoole\Http\Request as SwooleRequest;
-use Swoole\Http\Response as SwooleResponse;
-use Betterde\Swoole\Contracts\WebSocketKernel;
-use Betterde\Swoole\Contracts\ParserInterface;
+use Betterde\Swoole\Contracts\EventInterface;
 use Illuminate\Contracts\Debug\ExceptionHandler;
 
 /**
@@ -24,8 +16,6 @@ use Illuminate\Contracts\Debug\ExceptionHandler;
  */
 class Manager
 {
-    use Adapter;
-    
     /**
      * Laravel Application 实例
      *
@@ -56,14 +46,13 @@ class Manager
     /**
      * Manager constructor.
      * @param Application $app
+     * @param EventInterface $events
      */
-    public function __construct(Application $app)
+    public function __construct(Application $app, EventInterface $events)
     {
-        $events = new ServiceEvent();
-        $this->events = $events->getEvents();
+        $this->events = $events;
         $this->app = $app;
-        $parser = new Parser();
-        $this->initialize($parser);
+        $this->initialize();
     }
 
     /**
@@ -71,11 +60,9 @@ class Manager
      *
      * Date: 2018/11/10
      * @author George
-     * @param ParserInterface $parser
      */
-    protected function initialize(ParserInterface $parser)
+    protected function initialize()
     {
-        $this->setParser($parser);
         $this->registerListeners();
     }
 
@@ -109,11 +96,12 @@ class Manager
      */
     protected function registerListeners()
     {
-        foreach ($this->events as $event) {
+        foreach ($this->events->getEvents() as $event) {
             $listener = 'on' . ucfirst($event);
 
-            if (method_exists($this, $listener)) {
-                $this->app['swoole.server']->on($event, [$this, $listener]);
+            // 如果事件在对应的方法存在与Events实例中则注册，否则抛出全局事件
+            if (method_exists($this->events, $listener)) {
+                $this->app['swoole.server']->on($event, [$this->events, $listener]);
             } else {
                 $this->app['swoole.server']->on($event, function () use ($event) {
                     $event = sprintf('swoole.%s', $event);
@@ -122,223 +110,6 @@ class Manager
                 });
             }
         }
-    }
-
-    /**
-     * 获取解析器
-     *
-     * Date: 2018/11/10
-     * @author George
-     * @return Parser
-     */
-    public function getParser(): Parser
-    {
-        return $this->parser;
-    }
-
-    /**
-     * 设置解析器
-     *
-     * Date: 2018/11/10
-     * @author George
-     * @param ParserInterface $parser
-     */
-    public function setParser(ParserInterface $parser): void
-    {
-        $this->parser = $parser;
-    }
-
-    /**
-     * "onStart" listener.
-     */
-    public function onStart()
-    {
-        $this->setProcessName('master process');
-        $this->createPidFile();
-
-        $this->app['events']->fire('swoole.start', func_get_args());
-    }
-
-    /**
-     * The listener of "managerStart" event.
-     *
-     * @return void
-     */
-    public function onManagerStart()
-    {
-        $this->setProcessName('manager process');
-        $this->app['events']->fire('swoole.managerStart', func_get_args());
-    }
-
-    /**
-     * Date: 2018/11/11
-     * @author George
-     * @param $server
-     */
-    public function onWorkerStart(Server $server)
-    {
-        $this->clearCache();
-        $this->setProcessName('worker process');
-
-        $this->app['events']->fire('swoole.workerStart', func_get_args());
-
-        // clear events instance in case of repeated listeners in worker process
-        Facade::clearResolvedInstance('events');
-
-        $kernel = $this->app->make(Kernel::class);
-        $reflection = new ReflectionObject($kernel);
-        $bootstrappersMethod = $reflection->getMethod('bootstrappers');
-        $bootstrappersMethod->setAccessible(true);
-        $bootstrappers = $bootstrappersMethod->invoke($kernel);
-        array_splice($bootstrappers, -2, 0, ['Illuminate\Foundation\Bootstrap\SetRequestForConsole']);
-        $this->app->bootstrapWith($bootstrappers);
-        $this->resolveInstances();
-    }
-
-    /**
-     * 收到消息后分发
-     *
-     * Date: 2018/11/14
-     * @author George
-     * @param Server $server
-     * @param Frame $frame
-     */
-    public function onMessage(Server $server, Frame $frame)
-    {
-        $this->app->singleton(config('swoole.kernel.abstract'), config('swoole.kernel.concrete'));
-        $kernel = $this->app->make(WebSocketKernel::class);
-        $kernel->handle($server, $frame);
-    }
-
-    /**
-     * Date: 2018/11/13
-     * @author George
-     * @param SwooleRequest $swooleRequest
-     * @param SwooleResponse $swooleResponse
-     */
-    public function onRequest(SwooleRequest $swooleRequest, SwooleResponse $swooleResponse)
-    {
-        $request = $this->transformRequest($swooleRequest);
-        $kernel = $this->app->make(Kernel::class);
-
-        /**
-         * @var \Illuminate\Http\Response $response
-         */
-        $response = $kernel->handle($request);
-        $kernel->terminate($request, $response);
-
-        /* RFC2616 - 14.18 says all Responses need to have a Date */
-        if (!$response->headers->has('Date')) {
-            $response->setDate(\DateTime::createFromFormat('U', time()));
-        }
-
-        $headers = $response->headers->allPreserveCase();
-        if (isset($headers['Set-Cookie'])) {
-            unset($headers['Set-Cookie']);
-        }
-
-        foreach ($headers as $name => $values) {
-            foreach ($values as $value) {
-                $swooleResponse->header($name, $value);
-            }
-        }
-
-        $this->transformResponse($response, $swooleResponse);
-    }
-
-    /**
-     * Set onShutdown listener.
-     */
-    public function onShutdown()
-    {
-        $this->removePidFile();
-    }
-
-    /**
-     * Gets pid file path.
-     *
-     * @return string
-     */
-    protected function getPidFile()
-    {
-        return $this->app['config']->get('swoole.options.pid_file');
-    }
-
-    /**
-     * Create pid file.
-     */
-    protected function createPidFile()
-    {
-        $pidFile = $this->getPidFile();
-        $pid = $this->app['swoole.server']->master_pid;
-
-        file_put_contents($pidFile, $pid);
-    }
-
-    /**
-     * Remove pid file.
-     */
-    protected function removePidFile()
-    {
-        $pidFile = $this->getPidFile();
-
-        if (file_exists($pidFile)) {
-            unlink($pidFile);
-        }
-    }
-
-    /**
-     * Clear APC or OPCache.
-     */
-    protected function clearCache()
-    {
-        if (function_exists('apc_clear_cache')) {
-            apc_clear_cache();
-        }
-
-        if (function_exists('opcache_reset')) {
-            opcache_reset();
-        }
-    }
-
-    /**
-     * Set process name.
-     *
-     * @codeCoverageIgnore
-     * @param $process
-     */
-    protected function setProcessName($process)
-    {
-        // MacOS doesn't support modifying process name.
-        if ($this->isMacOS() || $this->isInTesting()) {
-            return;
-        }
-        $serverName = 'swoole_http_server';
-        $appName = $this->app['config']->get('app.name', 'Laravel');
-
-        $name = sprintf('%s: %s for %s', $serverName, $process, $appName);
-
-        swoole_set_process_name($name);
-    }
-
-    /**
-     * Date: 2018/11/10
-     * @author George
-     * @return bool
-     */
-    protected function isMacOS()
-    {
-        return PHP_OS === 'Darwin';
-    }
-
-    /**
-     * Indicates if it's in phpunit environment.
-     *
-     * @return bool
-     */
-    protected function isInTesting()
-    {
-        return defined('IN_PHPUNIT') && IN_PHPUNIT;
     }
 
     /**
