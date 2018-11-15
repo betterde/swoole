@@ -91,7 +91,7 @@ class Dispatcher implements DispatcherInterface
             return new Payload(
                 $controller,
                 array_get($data, 'action', $action),
-                array_get($data, 'body', null),
+                array_get($data, 'body', []),
                 $frame->fd,
                 $frame->opcode
             );
