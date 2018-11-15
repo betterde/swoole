@@ -95,8 +95,6 @@ return [
         'log_file' => storage_path('logs/swoole.log'),
     ],
 
-    'parser' => \Betterde\Swoole\Server\Message\Parser::class,
-
     /*
     |--------------------------------------------------------------------------
     | 定义逻辑控制器的命名空间
@@ -119,7 +117,13 @@ return [
     |--------------------------------------------------------------------------
     */
     'online' => [
-
+        'database' => 'status',
+        'user_to_session' => [
+            'key' => '%s', // 用户UID
+            'field' => '%d', // FD
+            'value' => '%s-%s' // Client-Version
+        ],
+        'session_to_user' => 'fd_to_uid',
     ],
 
     /*
@@ -128,17 +132,9 @@ return [
     |--------------------------------------------------------------------------
     */
     'multiterminal' => env('WEB_SOCKET_MULTITERMINAL', false),
-    'kernel' => [
-        'abstract' => \Betterde\Swoole\Contracts\WebSocketKernel::class,
-        'concrete' => \App\Socket\Kernel::class
-    ],
-    'events' => [
-        'abstract' => \Betterde\Swoole\Contracts\EventInterface::class,
-        'concrete' => \Betterde\Swoole\Server\ServiceEvent::class,
-    ],
-    'dispatcher' => [
-        'abstract' => \Betterde\Swoole\Contracts\Dispatcher::class,
-        'concrete' => \App\Socket\Dispatcher::class,
-    ],
+    'kernel' => \Betterde\Swoole\Server\Kernel::class,
+    'events' => \Betterde\Swoole\Server\ServiceEvent::class,
+    'dispatcher' => \Betterde\Swoole\Server\Message\Dispatcher::class,
+    'status' => \Betterde\Swoole\Server\User\Status::class,
     'custom_controller' => false
 ];
