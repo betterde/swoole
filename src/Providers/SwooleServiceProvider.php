@@ -2,7 +2,6 @@
 
 namespace Betterde\Swoole\Providers;
 
-use Betterde\Swoole\Contracts\UserStateInterface;
 use Swoole\WebSocket\Server;
 use Betterde\Swoole\Server\Manager;
 use Illuminate\Support\ServiceProvider;
@@ -11,6 +10,7 @@ use Betterde\Swoole\Contracts\EventInterface;
 use Betterde\Swoole\Contracts\WebSocketKernel;
 use Betterde\Swoole\Console\StopServiceCommand;
 use Betterde\Swoole\Console\StartServiceCommand;
+use Betterde\Swoole\Contracts\UserStateInterface;
 use Betterde\Swoole\Console\ReloadServiceCommand;
 use Betterde\Swoole\Console\RestartServiceCommand;
 use Betterde\Swoole\Console\DisplayEnvironmentsCommand;

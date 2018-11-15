@@ -95,6 +95,12 @@ return [
         'log_file' => storage_path('logs/swoole.log'),
     ],
 
+    'resolved' => [
+        'view', 'files', 'session', 'session.store', 'routes',
+        'db', 'db.factory', 'cache', 'cache.store', 'config', 'cookie',
+        'encrypter', 'hash', 'router', 'translator', 'url', 'log'
+    ],
+
     /*
     |--------------------------------------------------------------------------
     | 定义逻辑控制器的命名空间
@@ -103,12 +109,6 @@ return [
     'im' => [
         'namespace' => 'App\Socket\Controllers',
         'default' => 'DefaultHandler@handler',
-    ],
-
-    'resolved' => [
-        'view', 'files', 'session', 'session.store', 'routes',
-        'db', 'db.factory', 'cache', 'cache.store', 'config', 'cookie',
-        'encrypter', 'hash', 'router', 'translator', 'url', 'log'
     ],
 
     /*
