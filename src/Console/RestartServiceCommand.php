@@ -48,6 +48,8 @@ class RestartServiceCommand extends Command
      */
     public function handle()
     {
-
+        $this->call('swoole:stop');
+        $this->call('swoole:start');
+        return true;
     }
 }

@@ -2,6 +2,7 @@
 
 namespace Betterde\Swoole\Console;
 
+use Swoole\Process;
 use Illuminate\Console\Command;
 
 /**
@@ -48,109 +49,63 @@ class ReloadServiceCommand extends Command
      */
     public function handle()
     {
-        dd($this->arguments());
-
-        $signal = $this->arguments();
-
-        if (array_get($signal, 'start', null)) {
-            $this->start();
-            return true;
+        $file = config('swoole.options.pid_file');
+        if (file_exists($file)) {
+            $pid = (int) file_get_contents($file);
+            if ($pid && $this->running($pid)) {
+                $this->info('Stopping swoole server...');
+                $this->kill($pid, SIGUSR1, 3);
+                $this->info('Succesed');
+            }
+        } else {
+            $this->info('Swoole server is not running');
         }
 
-        if (array_get($signal, 'stop', null)) {
-            $this->start();
-            return true;
-        }
-
-        if (array_get($signal, 'restart', null)) {
-            $this->start();
-            return true;
-        }
-
-        if (array_get($signal, 'reload', null)) {
-            $this->start();
-            return true;
-        }
-
-        if (array_get($signal, 'env', null)) {
-            $this->start();
-            return true;
-        }
-    }
-
-    private function start()
-    {
-        $this->check();
-        $this->environment();
-    }
-
-    private function stop()
-    {
-
-    }
-
-    private function restart()
-    {
-
-    }
-
-    private function reload()
-    {
-
+        return true;
     }
 
     /**
-     * 显示运行环境信息
+     * 结束进程
      *
-     * Date: 2018/11/07
+     * Date: 2018/11/15
      * @author George
+     * @param $pid
+     * @param $sig
+     * @param int $wait
+     * @return bool
      */
-    private function environment()
+    private function kill($pid, $sig, $wait = 0)
     {
-        $headers = ['name', 'value'];
-        $this->info("Swoole service environments");
-        $environment = [
-            ['Host', config('swoole.host')],
-            ['Port', config('swoole.port')],
-            ['Worker number', config('swoole.worker_num')],
-            ['User', get_current_user()],
-            ['Daemon', config('swoole.daemonize')],
-            ['PHP version', phpversion()],
-            ['Swoole version', phpversion('swoole')],
-        ];
-        $this->table($headers, $environment);
+        Process::kill($pid, $sig);
+
+        if ($wait) {
+            $start = time();
+            do {
+                if (! $this->running($pid)) {
+                    break;
+                }
+
+                usleep(100000);
+            } while (time() < $start + $wait);
+        }
+
+        return $this->running($pid);
     }
 
     /**
-     * 检验运行环境是否满足需求
+     * 检测服务是否处于运行状态
      *
-     * Date: 2018/11/07
+     * Date: 2018/11/15
      * @author George
+     * @param int $pid
+     * @return bool
      */
-    private function check()
+    private function running(int $pid)
     {
-        // 判断运行环境是否是Windows系统
-        if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
-            $this->error("Swoole extension doesn't support Windows OS yet.");
-            exit;
-        }
-
-        // 判断PHP版本是否符合要求
-        if (version_compare(phpversion(), '7.1', '<')) {
-            $this->error("Your PHP version must be higher than 7.1 to use coroutine.");
-            exit;
-        }
-
-        // 判断是否安装了 Swoole 扩展
-        if (!extension_loaded('swoole')) {
-            $this->error("Can't detect Swoole extension installed.");
-            exit;
-        }
-
-        // 判断 Swoole 扩展版本是否符合要求
-        if (version_compare(swoole_version(), '4.0.0', '<')) {
-            $this->error("Your Swoole version must be higher than 4.0 to use coroutine.");
-            exit;
+        try {
+            return Process::kill($pid, 0);
+        } catch (Throwable $exception) {
+            return false;
         }
     }
 }

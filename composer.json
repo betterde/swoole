@@ -1,5 +1,6 @@
 {
     "name": "betterde/swoole",
+    "version": "0.1.0",
     "description": "Swoole server",
     "type": "library",
     "license": "MIT",
@@ -9,15 +10,21 @@
             "email": "george@betterde.com"
         }
     ],
-    "minimum-stability": "dev",
-    "require": {},
+    "require": {
+        "php": "^7.1",
+        "ext-pdo": "*",
+        "ext-pcntl": "*",
+        "illuminate/console": "~5.5",
+        "illuminate/contracts": "~5.5",
+        "illuminate/queue": "~5.5",
+        "illuminate/http": "~5.5",
+        "illuminate/support": "~5.5",
+        "predis/predis": "^1.1"
+    },
     "autoload": {
         "psr-4": {
             "Betterde\\Swoole\\": "src/"
-        },
-        "files": [
-            "src/Helpers/swoole.php"
-        ]
+        }
     },
     "autoload-dev": {
         "psr-4": {
@@ -28,7 +35,15 @@
         "laravel": {
             "providers": [
                 "Betterde\\Swoole\\Providers\\SwooleServiceProvider"
-            ]
+            ],
+            "aliases": {
+                "Server": "Betterde\\Swoole\\Facades\\Server"
+            }
         }
-    }
+    },
+    "config": {
+        "sort-packages": true
+    },
+    "prefer-stable": true,
+    "minimum-stability": "dev"
 }

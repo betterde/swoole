@@ -3,6 +3,7 @@
 namespace Betterde\Swoole\Console;
 
 use Illuminate\Console\Command;
+use Betterde\Swoole\Contracts\UserStateInterface;
 
 /**
  * Swoole 服务管理命令
@@ -51,6 +52,18 @@ class StartServiceCommand extends Command
     {
         $this->check();
         $this->environment();
+        $this->clearCache();
+        $this->laravel->make('swoole.manager')->run();
+    }
+
+    /**
+     * Date: 2018/11/15
+     * @author George
+     */
+    private function clearCache()
+    {
+        $status = $this->laravel->make(UserStateInterface::class);
+        $status->clear();
     }
 
     /**
@@ -66,13 +79,14 @@ class StartServiceCommand extends Command
         $environment = [
             ['Host', config('swoole.host')],
             ['Port', config('swoole.port')],
-            ['Worker number', config('swoole.worker_num')],
+            ['Worker number', config('swoole.options.worker_num')],
+            ['Reactor number', config('swoole.options.reactor_num')],
             ['User', get_current_user()],
-            ['Daemon', config('swoole.daemonize')],
+            ['Daemon', config('swoole.options.daemonize') ? 'true' : 'false'],
             ['PHP Version', phpversion()],
             ['Swoole Version', phpversion('swoole')],
-            ['PID File Path', config('swoole.pid_file')],
-            ['Log File Path', config('swoole.log_file')]
+            ['PID File Path', config('swoole.options.pid_file')],
+            ['Log File Path', config('swoole.options.log_file')]
         ];
         $this->table($headers, $environment);
     }
