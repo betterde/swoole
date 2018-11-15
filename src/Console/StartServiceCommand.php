@@ -3,6 +3,7 @@
 namespace Betterde\Swoole\Console;
 
 use Illuminate\Console\Command;
+use Betterde\Swoole\Contracts\UserStateInterface;
 
 /**
  * Swoole 服务管理命令
@@ -51,7 +52,18 @@ class StartServiceCommand extends Command
     {
         $this->check();
         $this->environment();
+        $this->clearCache();
         $this->laravel->make('swoole.manager')->run();
+    }
+
+    /**
+     * Date: 2018/11/15
+     * @author George
+     */
+    private function clearCache()
+    {
+        $status = $this->laravel->make(UserStateInterface::class);
+        $status->clear();
     }
 
     /**
@@ -68,6 +80,7 @@ class StartServiceCommand extends Command
             ['Host', config('swoole.host')],
             ['Port', config('swoole.port')],
             ['Worker number', config('swoole.options.worker_num')],
+            ['Reactor number', config('swoole.options.reactor_num')],
             ['User', get_current_user()],
             ['Daemon', config('swoole.options.daemonize') ? 'true' : 'false'],
             ['PHP Version', phpversion()],
