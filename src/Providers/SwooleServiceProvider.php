@@ -2,10 +2,13 @@
 
 namespace Betterde\Swoole\Providers;
 
+use Betterde\Swoole\Contracts\UserStateInterface;
 use Swoole\WebSocket\Server;
 use Betterde\Swoole\Server\Manager;
 use Illuminate\Support\ServiceProvider;
-use Betterde\Swoole\Contracts\ParserInterface;
+use Betterde\Swoole\Contracts\Dispatcher;
+use Betterde\Swoole\Contracts\EventInterface;
+use Betterde\Swoole\Contracts\WebSocketKernel;
 use Betterde\Swoole\Console\StopServiceCommand;
 use Betterde\Swoole\Console\StartServiceCommand;
 use Betterde\Swoole\Console\ReloadServiceCommand;
@@ -40,9 +43,10 @@ class SwooleServiceProvider extends ServiceProvider
     protected static $server;
 
     /**
-     * Bootstrap any application services.
+     * 加载配置文件和命令
      *
-     * @return void
+     * Date: 2018/11/15
+     * @author George
      */
     public function boot()
     {
@@ -64,28 +68,16 @@ class SwooleServiceProvider extends ServiceProvider
     }
 
     /**
-     * Register any application services.
+     * 注册服务
      *
-     * @return void
+     * Date: 2018/11/15
+     * @author George
      */
     public function register()
     {
         $this->registerServer();
         $this->registerKernel();
         $this->registerManager();
-    }
-
-    /**
-     * 注册消息服务内核
-     *
-     * Date: 2018/11/14
-     * @author George
-     */
-    public function registerKernel()
-    {
-        $this->app->singleton(config('swoole.kernel.abstract'), config('swoole.kernel.concrete'));
-        $this->app->singleton(config('swoole.events.abstract'), config('swoole.events.concrete'));
-        $this->app->singleton(config('swoole.dispatcher.abstract'), config('swoole.dispatcher.concrete'));
     }
 
     /**
@@ -106,8 +98,20 @@ class SwooleServiceProvider extends ServiceProvider
         });
 
         $this->app->alias(\Betterde\Swoole\Facades\Server::class, 'swoole.server');
+    }
 
-        $this->app->singleton(ParserInterface::class, config('swoole.parser'));
+    /**
+     * 注册消息服务内核
+     *
+     * Date: 2018/11/14
+     * @author George
+     */
+    protected function registerKernel()
+    {
+        $this->app->singleton(WebSocketKernel::class, config('swoole.kernel'));
+        $this->app->singleton(EventInterface::class, config('swoole.events'));
+        $this->app->singleton(Dispatcher::class, config('swoole.dispatcher'));
+        $this->app->singleton(UserStateInterface::class, config('swoole.status'));
     }
 
     /**
@@ -119,7 +123,7 @@ class SwooleServiceProvider extends ServiceProvider
     protected function registerManager()
     {
         $this->app->singleton('swoole.manager', function ($app) {
-            return new Manager($app);
+            return new Manager($app, $this->app->make(EventInterface::class));
         });
     }
 
