@@ -66,14 +66,16 @@ class Payload implements PayloadInterface
      * @param $content
      * @param $sender
      * @param $opcode
+     * @param int $tries
      */
-    public function __construct($controller, $action, $content, $sender, $opcode)
+    public function __construct($controller, $action, $content, $sender, $opcode, int $tries)
     {
         $this->controller = $controller;
         $this->action = $action;
         $this->content = $content;
         $this->sender = $sender;
         $this->opcode = $opcode;
+        $this->tries = $tries;
     }
 
     /**

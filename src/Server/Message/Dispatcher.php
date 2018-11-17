@@ -93,7 +93,8 @@ class Dispatcher implements DispatcherInterface
                 array_get($data, 'action', $action),
                 array_get($data, 'body', []),
                 $frame->fd,
-                $frame->opcode
+                $frame->opcode,
+                array_get($data, 'tries', 0)
             );
         }
 
