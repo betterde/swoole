@@ -122,5 +122,11 @@ class StartServiceCommand extends Command
             $this->error("Your Swoole version must be higher than 4.0 to use coroutine.");
             exit;
         }
+
+        $dir = dirname(config('swoole.options.pid_file'));
+
+        if (!is_dir($dir)) {
+            mkdir($dir, 0777, true);
+        }
     }
 }
