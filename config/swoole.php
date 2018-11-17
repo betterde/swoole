@@ -114,7 +114,7 @@ return [
     */
     'im' => [
         'namespace' => 'App\Socket\Controllers',
-        'default' => 'DefaultHandler@handler',
+        'default' => 'MessageController@send',
     ],
 
     /*

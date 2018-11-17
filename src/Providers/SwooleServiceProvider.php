@@ -53,6 +53,7 @@ class SwooleServiceProvider extends ServiceProvider
         // 发布配置文件到项目目录
         $this->publishes([
             __DIR__ . '/../../config/swoole.php' => config_path('swoole.php'),
+            __DIR__ . '/../../templates/MessageController.tpl' => base_path('app/Socket/Controllers/MessageController.php')
         ]);
 
         // 注册服务管理命令

@@ -15,5 +15,14 @@ use Swoole\WebSocket\Server;
  */
 interface Dispatcher
 {
+    /**
+     * 分发消息到业务逻辑
+     *
+     * Date: 2018/11/17
+     * @author George
+     * @param Server $server
+     * @param Frame $frame
+     * @return mixed
+     */
     public function dispatch(Server $server, Frame $frame);
 }

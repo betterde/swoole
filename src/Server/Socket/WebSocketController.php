@@ -75,7 +75,7 @@ abstract class WebSocketController
      * @param Payload $payload
      * @return mixed
      */
-    abstract function message(Server $server, Payload $payload);
+    abstract function send(Server $server, Payload $payload);
 
     /**
      * 魔术方法
