@@ -1,6 +1,6 @@
 {
     "name": "betterde/swoole",
-    "version": "0.1.1",
+    "version": "0.1.2",
     "description": "Swoole server",
     "type": "library",
     "license": "MIT",
