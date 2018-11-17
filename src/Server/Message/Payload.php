@@ -51,6 +51,15 @@ class Payload implements PayloadInterface
     public $opcode;
 
     /**
+     * 重试次数
+     *
+     * @var int $tries
+     * Date: 2018/11/17
+     * @author George
+     */
+    public $tries;
+
+    /**
      * Payload constructor.
      * @param $controller
      * @param $action
@@ -168,5 +177,25 @@ class Payload implements PayloadInterface
     public function setOpcode(int $opcode): void
     {
         $this->opcode = $opcode;
+    }
+
+    /**
+     * Date: 2018/11/17
+     * @author George
+     * @return int
+     */
+    public function getTries(): int
+    {
+        return $this->tries;
+    }
+
+    /**
+     * Date: 2018/11/17
+     * @author George
+     * @param int $tries
+     */
+    public function setTries(int $tries): void
+    {
+        $this->tries = $tries;
     }
 }
